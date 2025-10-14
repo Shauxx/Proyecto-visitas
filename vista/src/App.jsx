@@ -6,11 +6,11 @@ function App() {
     <>
       <div>
         <button onDoubleClick={async () => {
-          const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users`)
+          const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/ping/cliente`)
           const data = await res.json()
           console.log(data)
         }}>
-          user
+          cliente
         </button>
       </div>
     </>
