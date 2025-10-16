@@ -1,19 +1,19 @@
 import express from 'express'
 import cors from 'cors'
 import pg from 'pg'
-import { FRONTEND_URL } from './config.js'
+import { FRONTEND_URL, DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, DB_PORT } from './config.js'
 
 const app = express()
 const pool = new pg.Pool({
-    host: "localhost",
-    database: "visitas",
-    user: "postgres",
-    password: "1234",
-    port: 5432,
+    host: DB_HOST,
+    database: DB_NAME,
+    user: DB_USER,
+    password: DB_PASSWORD,
+    port: DB_PORT,
 });
 
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: FRONTEND_URL,
 }));
 
 app.get("/ping/cliente", async (req, res) => {
