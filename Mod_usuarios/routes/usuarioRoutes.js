@@ -2,8 +2,29 @@
 import express from 'express';
 import User from '../db/models/usuario.js';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { authenticateToken } from '../middlewares/auth.js';
 
 const router = express.Router();
+
+router.get('/perfil', authenticateToken, async (req, res) => {
+    try {
+        const user = await User.findByPk(req.user.id, {
+            include: [{ association: 'empleado', attributes: ['nombre', 'apellido'] }]
+        });
+
+        const perfil = {
+            idRol: user.idRol,
+            idEmpleado: user.idEmpleado,
+            empleado: user.empleado
+        };
+
+        res.json({ success: true, data: perfil });
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Error interno.' });
+    }
+});
+
 
 router.get('/usuario', async (req, res) => {
     try {
@@ -89,19 +110,38 @@ router.post('/usuario/login', async (req, res) => {
     const { usuario, contra } = req.body;
 
     try {
-        const user = await User.findOne({ where: { usuario, estado: 1 } });
+        const user = await User.findOne({
+            where: { usuario, estado: 1 },
+            include: [{ association: 'empleado', attributes: ['nombre', 'apellido'] }]
+        });
 
         if (!user) {
             return res.status(401).json({ success: false, error: 'Usuario incorrecto.' });
         }
 
         const isMatch = await bcrypt.compare(contra, user.contra);
-
         if (!isMatch) {
             return res.status(401).json({ success: false, error: 'Contraseña incorrecta.' });
         }
 
-        res.status(200).json({ success: true, data: user, message: 'Ingreso exitoso.' });
+        const payload = {
+            id: user.id,
+            idEmpleado: user.idEmpleado,
+            idRol: user.idRol
+        };
+
+        const token = jwt.sign(payload, process.env.JWT_SECRET, {
+            expiresIn: process.env.JWT_EXPIRES || '8h'
+        });
+
+        const safeUser = { ...user.toJSON() };
+        delete safeUser.contra;
+
+        res.status(200).json({
+            success: true,
+            data: { user: safeUser, token },
+            message: 'Ingreso exitoso.'
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, error: 'Error interno del servidor.' });

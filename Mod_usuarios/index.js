@@ -8,6 +8,8 @@ import empleadoRoutes from './routes/empleadoRoutes.js';
 import permisoRoutes from './routes/permisoRoutes.js';
 import RolPermisoRoutes from './routes/rolPermisoRoutes.js';
 import UsuarioRoutes from './routes/usuarioRoutes.js';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;

@@ -1,4 +1,4 @@
-// db/models/rol.js
+// db/models/empleado.js
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../index.js';
 
@@ -47,5 +47,6 @@ const Empleado = sequelize.define('empleado', {
         allowNull: false,
     },
 });
+
 
 export default Empleado;
