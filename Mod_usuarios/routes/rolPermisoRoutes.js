@@ -31,6 +31,25 @@ router.get('/rolpermiso/:id', async (req, res) => {
     }
 });
 
+router.get('/rolpermiso/rol/:idRol', async (req, res) => {
+    const idRol = req.params.idRol;
+
+    try {
+        const permisos = await User.findAll({
+            where: { idRol, estado: 1 }
+        });
+
+        if (!permisos || permisos.length === 0) {
+            return res.status(404).json({ success: false, error: 'No se encontraron permisos para este rol.' });
+        }
+
+        res.status(200).json({ success: true, data: permisos, message: 'Permisos obtenidos correctamente.' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, error: 'Internal Server Error' });
+    }
+});
+
 router.post('/rolpermiso', async (req, res) => {
     const { idRol, idPermiso, creadoPor, actualizadoPor } = req.body;
 

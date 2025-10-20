@@ -1,28 +1,27 @@
-import express from 'express'
-import cors from 'cors'
-import pg from 'pg'
-import { FRONTEND_URL, DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, DB_PORT } from './config.js'
+// index.js
+import express from 'express';
+import cors from 'cors';
+import { sequelize } from './db/index.js';
+import { FRONTEND_URL } from './config/db.config.js';
+import ubicacionRoutes from './routes/ubicacionRoutes.js';
+import clienteRoutes from './routes/clienteRoutes.js';
 
-const app = express()
-const pool = new pg.Pool({
-    host: DB_HOST,
-    database: DB_NAME,
-    user: DB_USER,
-    password: DB_PASSWORD,
-    port: DB_PORT,
-});
+const app = express();
+const PORT = process.env.PORT || 3000;
 
+// Middleware
+app.use(express.json());
 app.use(cors({
-    origin: FRONTEND_URL,
+    origin: FRONTEND_URL
 }));
 
-app.get("/ping/cliente", async (req, res) => {
-    const result = await pool.query("Select NOW()");
-    res.send({
-        pongCliente: result.rows[0].now,
-    });
-})
+// Rutas
+app.use('/cliente', ubicacionRoutes);
+app.use('/cliente', clienteRoutes);
 
-app.listen(3000, () => {
-    console.log('server started on port 3000')
-}) 
+// Sincronizar con la base de datos y arrancar el servidor
+sequelize.sync({ force: false }).then(() => {
+    app.listen(PORT, () => {
+        console.log(`Servidor en ejecución en http://localhost:${PORT}`);
+    });
+});
