@@ -26,7 +26,7 @@ const Visitas = sequelize.define('visitas', {
         type: DataTypes.DATE,
         allowNull: false,
     },
-    estado: {
+    status: {
         type: DataTypes.INTEGER,
         defaultValue: 1,
     },

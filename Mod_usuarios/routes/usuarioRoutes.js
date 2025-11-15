@@ -57,7 +57,7 @@ router.post('/usuario', async (req, res) => {
     const { usuario, contra, idRol, idEmpleado, creadoPor, actualizadoPor } = req.body;
 
     try {
-        const existing = await User.findOne({ where: { usuario } });
+        const existing = await User.findOne({ where: { usuario, idEmpleado } });
 
         if (existing) {
             return res.status(400).json({ success: false, error: 'El usuario ya existe.' });

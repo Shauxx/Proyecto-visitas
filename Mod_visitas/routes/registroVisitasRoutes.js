@@ -35,12 +35,6 @@ router.post('/registroVisitas', async (req, res) => {
     const { horaingreso, horaegreso, obervaciones, recomendaciones, creadoPor, actualizadoPor } = req.body;
 
     try {
-        const existing = await User.findOne({ where: { tipo } });
-
-        if (existing) {
-            return res.status(400).json({ success: false, error: 'El registro de Visitas ya existe.' });
-        }
-
         const newcargo = await User.create({ horaingreso, horaegreso, obervaciones, recomendaciones, creadoPor, actualizadoPor });
 
         res.status(201).json({ success: true, data: newcargo, message: 'Registro de Visitas creado correctamente.' });

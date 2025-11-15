@@ -26,6 +26,6 @@ export const authenticateToken = async (req, res, next) => {
         next();
     } catch (err) {
         console.error(err);
-        return res.status(401).json({ success: false, error: 'Token inválido o expirado.' });
+        return res.status(401).json({ success: false, error: 'Sesión expirada.' });
     }
 };

@@ -7,11 +7,28 @@ const router = express.Router();
 
 router.get('/', async (req, res) => {
     try {
-        const data = await User.findAll({ where: { estado: 1 } });
-        res.status(200).json({ success: true, data, message: 'Clientes obtenidos correctamente.' });
+        const data = await User.findAll({
+            where: { estado: 1 },
+            include: [
+                {
+                    model: Ubicacion,
+                    as: 'ubicacion',
+                    attributes: ['id', 'latitud', 'longitud', 'idDepartamento', 'idMunicipio'],
+                },
+            ],
+        });
+
+        res.status(200).json({
+            success: true,
+            data,
+            message: 'Clientes obtenidos correctamente.',
+        });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, error: 'Internal Server Error' });
+        console.error('Error al obtener clientes:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor.',
+        });
     }
 });
 
