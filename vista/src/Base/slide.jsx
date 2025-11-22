@@ -23,6 +23,11 @@ import Plantilla from '../page/Plantilla'
 import Cliente from '../page/ClienteForm'
 import Visita from '../page/VisitasPage'
 import Registro from '../page/registroVisita'
+import Historico from '../page/HistoricoVisitasTecnico'
+import DashboardTecnico from "../page/DashboardTecnico";
+import DashboardSupervisor from "../page/DashboardSupervisor";
+import DashboardAdmin from "../page/DashboardAdmin";
+import Perfil from '../page/Perfil'
 
 const URL = import.meta.env.VITE_BACKEND_USUARIO;
 const drawerWidth = 240;
@@ -49,6 +54,7 @@ export default function Slide() {
                 if (res.ok) {
                     setPerfil(data.data);
                     configurarMenu(data.data.idRol);
+                    setSelectedMenuItem('Inicio');
                 } else {
                     Swal.fire("Error", data.error, "error");
                     navigate("/");
@@ -65,11 +71,11 @@ export default function Slide() {
 
     const configurarMenu = (rol) => {
         if (rol === 1) {
-            setMenuItems(["Inicio", "Clientes", "Usuarios", "Visita", "Reportes", "Empleados", "Auditoria", "Rol", "Permiso", "Rol Permiso", "Tipo Servicio", "Estado", "Plantilla", "Registro"]);
+            setMenuItems(["Inicio", "Clientes", "Usuarios", "Visita", "Empleados", "Auditoria", "Rol", "Tipo Servicio", "Estado", "Plantilla"]);
         } else if (rol === 2) {
-            setMenuItems(["Inicio", "Visitas Programadas", "Reportes"]);
+            setMenuItems(["Inicio", "Visita"]);
         } else if (rol === 3) {
-            setMenuItems(["Inicio", "Mis Visitas", "Perfil", "Registro"]);
+            setMenuItems(["Inicio", "Mis Visitas", "Historico"]);
         }
     };
 
@@ -150,14 +156,19 @@ export default function Slide() {
         'Asignar notas': <Money />,
         'Reportes': <Assessment />,
         'Visita': <Book />,
-        'Asignacion de cursos': <BookmarkAdd />,
+        'Historico': <BookmarkAdd />,
         'Registro': <Money />,
+        'Mis Visitas': <Money />,
         'Estado': <Payment />,
         'Tipo Servicio': <Wallet />
     };
 
     const [anchorEl, setAnchorEl] = React.useState(null);
-    const [selectedMenuItem, setSelectedMenuItem] = React.useState(null);
+    const [selectedMenuItem, setSelectedMenuItem] = useState(
+        perfil?.idRol === 1 ? 'Inicio' :
+            perfil?.idRol === 2 ? 'Inicio' :
+                perfil?.idRol === 3 ? 'Inicio' : null
+    );
 
 
     const handleMenu = (event) => {
@@ -243,13 +254,6 @@ export default function Slide() {
                                 <Avatar /> Mi perfil
                             </MenuItem>
                             <Divider style={{ background: 'black' }} />
-
-                            <MenuItem onClick={handleClose}>
-                                <ListItemIcon>
-                                    <PersonOutline fontSize="small" />
-                                </ListItemIcon>
-                                Actualización de datos
-                            </MenuItem>
                             <MenuItem onClick={handleClose}>
                                 <ListItemIcon>
                                     <QuestionMark fontSize="small" />
@@ -306,6 +310,7 @@ export default function Slide() {
 
             <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
                 <DrawerHeader />
+                {perfil.idRol === 1 && selectedMenuItem === 'Inicio' && (<DashboardAdmin />)}
                 {perfil.idRol === 1 && selectedMenuItem === 'Empleados' && (<Empleado />)}
                 {perfil.idRol === 1 && selectedMenuItem === 'Auditoria' && (<Auditoria />)}
                 {perfil.idRol === 1 && selectedMenuItem === 'Usuarios' && (<Usuario />)}
@@ -318,8 +323,14 @@ export default function Slide() {
                 {perfil.idRol === 1 && selectedMenuItem === 'Clientes' && (<Cliente />)}
                 {perfil.idRol === 1 && selectedMenuItem === 'Visita' && (<Visita />)}
                 {perfil.idRol === 1 && selectedMenuItem === 'Registro' && (<Registro />)}
+                {perfil.idRol === 1 && selectedMenuItem === 'MiPerfil' && (<Perfil />)}
 
-                {perfil.idRol === 3 && selectedMenuItem === 'Registro' && (<Registro />)}
+                {perfil.idRol === 2 && selectedMenuItem === 'Visita' && (<Visita />)}
+                {perfil.idRol === 2 && selectedMenuItem === 'Inicio' && (<DashboardSupervisor />)}
+
+                {perfil.idRol === 3 && selectedMenuItem === 'Inicio' && (<DashboardTecnico />)}
+                {perfil.idRol === 3 && selectedMenuItem === 'Mis Visitas' && (<Registro />)}
+                {perfil.idRol === 3 && selectedMenuItem === 'Historico' && (<Historico />)}
             </Box>
         </Box>
     );

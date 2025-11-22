@@ -4,6 +4,8 @@ import { Button, Box, Snackbar, Alert } from "@mui/material";
 import TableTemplate from "../componentes/TableTemplate";
 import FormModal from "../componentes/FormModal";
 import ConfirmDialog from "../componentes/ConfirmDialog";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const Empleados = () => {
     const [empleados, setEmpleados] = useState([]);
@@ -28,6 +30,7 @@ const Empleados = () => {
         { field: "apellido", headerName: "Apellido" },
         { field: "nit", headerName: "NIT" },
         { field: "dpi", headerName: "DPI" },
+        { field: "correo", headerName: "Correo" },
     ];
 
     // 🧩 Obtener empleados
@@ -94,6 +97,10 @@ const Empleados = () => {
 
     // 🧩 Crear o editar empleado
     const handleAdd = async (nuevoEmpleado) => {
+        if (!nuevoEmpleado.correo || nuevoEmpleado.correo.trim() === "") {
+            showAlert("El campo correo es obligatorio.", "error");
+            return;
+        }
         try {
             const token = localStorage.getItem("token");
             const decoded = JSON.parse(atob(token.split(".")[1]));
@@ -106,6 +113,8 @@ const Empleados = () => {
                 actualizadoPor: userId,
                 creadoPor: userId,
             };
+
+            console.log("🔹 Payload enviado al backend:", payload); // 🔍 Mostrar payload
 
             const url = `${import.meta.env.VITE_BACKEND_USUARIO}/usuarios/empleado`;
 
@@ -128,13 +137,19 @@ const Empleados = () => {
                 showAlert(res.data?.message || "Empleado creado correctamente.");
             }
 
+            console.log("🔹 Respuesta del backend:", res.data); // 🔍 Mostrar respuesta
+
             obtenerEmpleados();
             setEditingEmpleado(null);
         } catch (error) {
             console.error("Error al guardar empleado:", error);
+            if (error.response) {
+                console.error("🔹 Error response del backend:", error.response.data); // 🔍 Mostrar detalle del 500
+            }
             showAlert("Error al guardar empleado.", "error");
         }
     };
+
 
     // ✏️ Editar empleado
     const handleEdit = (empleado) => {
@@ -179,6 +194,7 @@ const Empleados = () => {
         { name: "apellido", label: "Apellido" },
         { name: "nit", label: "NIT" },
         { name: "dpi", label: "DPI" },
+        { name: "correo", label: "Correo", type: "text" },
         {
             name: "idDepartamento",
             label: "Departamento",
@@ -200,9 +216,52 @@ const Empleados = () => {
         },
     ];
 
+
+    const generarPDFEmpleados = () => {
+        const doc = new jsPDF();
+
+        // 1️⃣ Título del PDF
+        doc.setFontSize(18);
+        doc.text("SkyNet S.A.", 14, 22);
+
+        // 2️⃣ Tabla con los datos de empleados
+        const tableColumn = ["#", "Nombre", "Apellido", "NIT", "DPI", "Correo"];
+        const tableRows = [];
+
+        empleados.forEach((e, index) => {
+            const rowData = [
+                index + 1,
+                e.nombre,
+                e.apellido,
+                e.nit,
+                e.dpi,
+                e.dpi,
+                e.correo
+            ];
+            tableRows.push(rowData);
+        });
+
+        autoTable(doc, {
+            startY: 30,
+            head: [tableColumn],
+            body: tableRows,
+            theme: "grid",
+            headStyles: { fillColor: [25, 118, 210], textColor: 255 },
+            styles: { fontSize: 10 },
+        });
+
+        // 3️⃣ Guardar PDF
+        doc.save("Empleados_SkyNet.pdf");
+    };
+
     return (
         <Box sx={{ p: 3 }}>
-            <h2>Gestión de Empleados</h2>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                <h2>Gestión de Empleados</h2>
+                <Button variant="outlined" color="secondary" onClick={generarPDFEmpleados}>
+                    Descargar PDF
+                </Button>
+            </Box>
 
             <Box sx={{ mb: 2, display: "flex", justifyContent: "flex-end" }}>
                 <Button

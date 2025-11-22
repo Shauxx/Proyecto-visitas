@@ -26,6 +26,11 @@ const Empleado = sequelize.define('empleado', {
         allowNull: false,
         unique: true,
     },
+    correo: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+    },
     idDepartamento: {
         type: DataTypes.INTEGER,
         allowNull: false,

@@ -1,3 +1,4 @@
+//vista\src\page\ClientesPage.jsx
 import React, { useEffect, useState } from "react";
 import { Box, Button, Typography, Modal } from "@mui/material";
 import TableTemplate from "./TableTemplate";

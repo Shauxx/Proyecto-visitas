@@ -4,6 +4,9 @@ import TableTemplate from "../componentes/TableTemplate";
 import FormModal from "../componentes/FormModal";
 import ConfirmDialog from "../componentes/ConfirmDialog";
 import { Button, Box, Snackbar, Alert } from "@mui/material";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 
 const Usuarios = () => {
     const [users, setUsers] = useState([]);
@@ -186,10 +189,54 @@ const Usuarios = () => {
         },
     ];
 
+    const generarPDFUsuarios = () => {
+        const doc = new jsPDF();
+
+        // 1️⃣ Nombre de la empresa
+        doc.setFontSize(18);
+        doc.text("SkyNet S.A.", 14, 20);
+
+        // 2️⃣ Columnas del PDF
+        const tableColumn = [
+            "Usuario",
+            "Rol",
+            "Empleado",
+            "Creado Por",
+            "Actualizado Por"
+        ];
+
+        // 3️⃣ Filas basadas en mappedUsers
+        const tableRows = mappedUsers.map((u) => [
+            u.usuario,
+            u.rolNombre,
+            u.empleadoNombre,
+            u.creadoNombre,
+            u.actualizadoNombre,
+        ]);
+
+        // 4️⃣ Construir tabla
+        autoTable(doc, {
+            startY: 28,
+            head: [tableColumn],
+            body: tableRows,
+            theme: "grid",
+            headStyles: { fillColor: [25, 118, 210], textColor: 255 },
+            styles: { fontSize: 10 }
+        });
+
+        // 5️⃣ Descargar PDF
+        doc.save("Usuarios_SkyNet.pdf");
+    };
+
+
     return (
         <div style={{ padding: 20 }}>
-            <h2>Gestión de Usuarios</h2>
-
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                <h2>Gestión de Usuarios</h2>
+                <Button variant="outlined" color="secondary" onClick={generarPDFUsuarios}>
+                    Descargar PDF
+                </Button>
+            </Box>
             <Box sx={{ mb: 2, display: "flex", justifyContent: "flex-end" }}>
                 <Button
                     variant="contained"

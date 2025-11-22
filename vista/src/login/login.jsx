@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import Logo from '../img/inicio2.jpeg'
+import Logo from '../img/inicio.png';
 import Swal from 'sweetalert2';
 import '../css/loguinForm.css';
 import Login from '../img/LogoCompleto.svg';

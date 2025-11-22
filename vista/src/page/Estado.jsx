@@ -5,6 +5,9 @@ import TableTemplate from "../componentes/TableTemplate";
 import FormModal from "../componentes/FormModal";
 import ConfirmDialog from "../componentes/ConfirmDialog";
 import { Button, Box, Snackbar, Alert } from "@mui/material";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 
 const Estado = () => {
     const [estados, setEstados] = useState([]);
@@ -147,9 +150,52 @@ const Estado = () => {
         { name: "tipo", label: "Tipo de Estado" },
     ];
 
+    const generarPDFEstados = () => {
+        const doc = new jsPDF();
+
+        // 1️⃣ Encabezado
+        doc.setFontSize(18);
+        doc.text("SkyNet S.A.", 14, 20);
+
+        // 2️⃣ Columnas del PDF
+        const tableColumn = [
+            "Tipo de Estado",
+            "Creado Por",
+            "Actualizado Por"
+        ];
+
+        // 3️⃣ Datos del PDF
+        const tableRows = mappedEstados.map((e) => [
+            e.tipo,
+            e.creadoPorNombre,
+            e.actualizadoPorNombre
+        ]);
+
+        // 4️⃣ Construir la tabla
+        autoTable(doc, {
+            startY: 28,
+            head: [tableColumn],
+            body: tableRows,
+            theme: "grid",
+            headStyles: { fillColor: [25, 118, 210], textColor: 255 },
+            styles: { fontSize: 10 }
+        });
+
+        // 5️⃣ Descargar PDF
+        doc.save("Estados_SkyNet.pdf");
+    };
+
+
     return (
         <div style={{ padding: 20 }}>
-            <h2>Gestión de Estados</h2>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                <h2>Gestión de Estados</h2>
+
+                <Button variant="outlined" color="secondary" onClick={generarPDFEstados}>
+                    Descargar PDF
+                </Button>
+            </Box>
+
 
             <Box sx={{ mb: 2, display: "flex", justifyContent: "flex-end" }}>
                 <Button variant="contained" color="primary" sx={{ mb: 2 }} onClick={() => { setModalData(null); setModalOpen(true); }}>

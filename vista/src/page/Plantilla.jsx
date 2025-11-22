@@ -5,6 +5,9 @@ import TableTemplate from "../componentes/TableTemplate";
 import PlantillaModal from "../componentes/PlantillaModal";
 import ConfirmDialog from "../componentes/ConfirmDialog";
 import { Button, Box, Snackbar, Alert } from "@mui/material";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 
 const Plantilla = () => {
     const [plantillas, setPlantillas] = useState([]);
@@ -153,10 +156,66 @@ const Plantilla = () => {
     ];
 
 
+    const generarPDFPlantillas = () => {
+        const doc = new jsPDF();
+
+        // 1️⃣ Encabezado corporativo
+        doc.setFontSize(18);
+        doc.text("SkyNet S.A.", 14, 20);
+
+        // 2️⃣ Columnas del PDF
+        const tableColumn = [
+            "Nombre",
+            "Asunto",
+            "Cuerpo",
+            "Creado Por",
+            "Actualizado Por"
+        ];
+
+        // 3️⃣ Filas del PDF
+        const tableRows = mappedPlantillas.map((p) => [
+            p.nombre,
+            p.asunto,
+            p.cuerpo,
+            p.creadoPorNombre,
+            p.actualizadoPorNombre
+        ]);
+
+        // 4️⃣ Construcción de tabla con estilo
+        autoTable(doc, {
+            startY: 28,
+            head: [tableColumn],
+            body: tableRows,
+            theme: "grid",
+            headStyles: {
+                fillColor: [25, 118, 210], // azul corporativo
+                textColor: 255
+            },
+            styles: {
+                fontSize: 9,
+                cellWidth: "wrap"
+            },
+            columnStyles: {
+                2: { cellWidth: 60 } // cuerpo de plantilla más ancho
+            }
+        });
+
+        // 5️⃣ Descargar PDF
+        doc.save("Plantillas_SkyNet.pdf");
+    };
+
+
 
     return (
         <div style={{ padding: 20 }}>
-            <h2>Gestión de Plantillas de Correo</h2>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                <h2>Gestión de Plantillas de Correo</h2>
+
+                <Button variant="outlined" color="secondary" onClick={generarPDFPlantillas}>
+                    Descargar PDF
+                </Button>
+            </Box>
+
 
             <Box sx={{ mb: 2, display: "flex", justifyContent: "flex-end" }}>
                 <Button

@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
                 {
                     model: Ubicacion,
                     as: 'ubicacion',
-                    attributes: ['id', 'latitud', 'longitud', 'idDepartamento', 'idMunicipio'],
+                    attributes: ['id', 'latitud', 'longitud', 'idDepartamento', 'idMunicipio', 'ubicacion'],
                 },
             ],
         });
@@ -50,14 +50,14 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-    const { nombre, apellido, nit, correo, telefono, idDepartamento, idMunicipio, longitud, latitud, creadoPor, actualizadoPor
+    const { nombre, apellido, nit, correo, telefono, idDepartamento, idMunicipio, longitud, latitud, ubicacion, creadoPor, actualizadoPor
     } = req.body;
 
     const transaction = await User.sequelize.transaction();
 
     try {
         const nuevaUbicacion = await Ubicacion.create(
-            { idDepartamento, idMunicipio, longitud, latitud, creadoPor, actualizadoPor },
+            { idDepartamento, idMunicipio, longitud, latitud, ubicacion, creadoPor, actualizadoPor },
             { transaction }
         );
 

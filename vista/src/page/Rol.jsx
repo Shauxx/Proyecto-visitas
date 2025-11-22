@@ -5,6 +5,9 @@ import FormModal from "../componentes/FormModal";
 import ConfirmDialog from "../componentes/ConfirmDialog";
 import { Button, Box } from "@mui/material";
 import { Snackbar, Alert } from "@mui/material";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 
 const Rol = () => {
     const [roles, setRoles] = useState([]);
@@ -166,9 +169,54 @@ const Rol = () => {
         { name: "descripcion", label: "Descripción" },
     ];
 
+
+    const generarPDFRoles = () => {
+        const doc = new jsPDF();
+
+        // 1️⃣ Encabezado
+        doc.setFontSize(18);
+        doc.text("SkyNet S.A.", 14, 20);
+
+        // 2️⃣ Columnas del PDF
+        const tableColumn = [
+            "Nombre del Rol",
+            "Descripción",
+            "Creado Por",
+            "Actualizado Por"
+        ];
+
+        // 3️⃣ Datos del PDF
+        const tableRows = mappedRoles.map((r) => [
+            r.nombre,
+            r.descripcion,
+            r.creadoPorNombre,
+            r.actualizadoPorNombre
+        ]);
+
+        // 4️⃣ Generar tabla
+        autoTable(doc, {
+            startY: 28,
+            head: [tableColumn],
+            body: tableRows,
+            theme: "grid",
+            headStyles: { fillColor: [25, 118, 210], textColor: 255 },
+            styles: { fontSize: 10 }
+        });
+
+        // 5️⃣ Descargar PDF
+        doc.save("Roles_SkyNet.pdf");
+    };
+
+
     return (
         <div style={{ padding: 20 }}>
-            <h2>Gestión de Roles</h2>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                <h2>Gestión de Roles</h2>
+                <Button variant="outlined" color="secondary" onClick={generarPDFRoles}>
+                    Descargar PDF
+                </Button>
+            </Box>
+
 
             <Box sx={{ mb: 2, display: "flex", justifyContent: "flex-end" }}>
                 <Button

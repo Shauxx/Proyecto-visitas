@@ -1,3 +1,4 @@
+//vista\src\page\ClienteForm.jsx
 import { useEffect, useState } from "react";
 import axios from "axios";
 import {
@@ -12,11 +13,14 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
+import { TablePagination } from "@mui/material";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const markerIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -34,6 +38,7 @@ const Clientes = () => {
     telefono: "",
     idDepartamento: "",
     idMunicipio: "",
+    ubicacion: "",
     latitud: "",
     longitud: "",
     idUbicacion: null,
@@ -41,6 +46,11 @@ const Clientes = () => {
   const [marker, setMarker] = useState(null);
   const [editing, setEditing] = useState(null);
   const [alert, setAlert] = useState({ open: false, message: "", severity: "success" });
+  const [departamentos, setDepartamentos] = useState([]);
+  const [municipios, setMunicipios] = useState({});
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+
 
   // 🔔 Mostrar alertas
   const showAlert = (message, severity = "success") => {
@@ -49,6 +59,7 @@ const Clientes = () => {
   };
 
   // 🗺️ Mapa: captura clics
+  // 🗺️ Mapa: captura clics
   const MapClickHandler = () => {
     useMapEvents({
       async click(e) {
@@ -56,33 +67,45 @@ const Clientes = () => {
         setMarker({ lat, lng });
 
         try {
-          // 1️⃣ Reverse geocoding (usando Nominatim)
+          // 1️⃣ Reverse geocoding
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
           );
           const data = await res.json();
 
-          const departamentoNombre = data.address?.state || "";
-          const municipioNombre =
+          // 2️⃣ Nombres RAW que devuelve Nominatim
+          const rawDep = data.address?.state || "";
+          const rawMuni =
             data.address?.county ||
-            data.address?.town ||
             data.address?.city ||
+            data.address?.town ||
             data.address?.village ||
             "";
 
-          console.log("Detectado:", departamentoNombre, municipioNombre);
+          // 3️⃣ Normalizar
+          const depNormalizado = rawDep
+            .replace("Departamento de ", "")
+            .replace("departmento de ", "")
+            .trim();
 
-          // 2️⃣ Buscar el ID del departamento en tu backend
-          const depRes = await fetch(`${import.meta.env.VITE_BACKEND_CONFIG}/config/departamento`);
+          const muniNormalizado = rawMuni
+            .replace("Ciudad de ", "")
+            .replace("city of ", "")
+            .trim();
+
+          // 4️⃣ Buscar el ID del departamento
+          const depRes = await fetch(
+            `${import.meta.env.VITE_BACKEND_CONFIG}/config/departamento`
+          );
           const depData = await depRes.json();
 
           const departamento = depData.data.find(
-            (d) => d.nombre.toLowerCase() === departamentoNombre.toLowerCase()
+            (d) => d.nombre.toLowerCase() === depNormalizado.toLowerCase()
           );
 
           const idDepartamento = departamento ? departamento.id : null;
 
-          // 3️⃣ Buscar el ID del municipio en base al departamento encontrado
+          // 5️⃣ Buscar el ID del municipio SOLO si se encontró el departamento
           let idMunicipio = null;
           if (idDepartamento) {
             const munRes = await fetch(
@@ -91,15 +114,13 @@ const Clientes = () => {
             const munData = await munRes.json();
 
             const municipio = munData.data.find(
-              (m) => m.nombre.toLowerCase() === municipioNombre.toLowerCase()
+              (m) => m.nombre.toLowerCase() === muniNormalizado.toLowerCase()
             );
 
             idMunicipio = municipio ? municipio.id : null;
           }
 
-          console.log("IDs encontrados:", idDepartamento, idMunicipio);
-
-          // 4️⃣ Actualizar el formulario con los IDs reales
+          // 6️⃣ Actualizar formulario
           setForm((prev) => ({
             ...prev,
             latitud: lat,
@@ -107,6 +128,10 @@ const Clientes = () => {
             idDepartamento: idDepartamento || "",
             idMunicipio: idMunicipio || "",
           }));
+
+          console.log("📍 Ubicación normalizada:");
+          console.log("Departamento:", depNormalizado, "→", idDepartamento);
+          console.log("Municipio:", muniNormalizado, "→", idMunicipio);
 
           if (!idDepartamento || !idMunicipio) {
             console.warn("⚠️ No se encontraron IDs para esa ubicación");
@@ -119,6 +144,7 @@ const Clientes = () => {
 
     return marker ? <Marker position={marker} icon={markerIcon} /> : null;
   };
+
 
 
 
@@ -136,8 +162,33 @@ const Clientes = () => {
   };
 
   useEffect(() => {
+    const cargarCatalogos = async () => {
+      try {
+        const depRes = await fetch(`${import.meta.env.VITE_BACKEND_CONFIG}/config/departamento`);
+        const depData = await depRes.json();
+        setDepartamentos(depData.data);
+
+        // Cargar municipios por cada departamento
+        let muniMap = {};
+        for (let dep of depData.data) {
+          const muniRes = await fetch(
+            `${import.meta.env.VITE_BACKEND_CONFIG}/config/municipio/departamento/${dep.id}`
+          );
+          const muniData = await muniRes.json();
+          muniMap[dep.id] = muniData.data;
+        }
+
+        setMunicipios(muniMap);
+
+      } catch (error) {
+        console.error("Error cargando catálogos:", error);
+      }
+    };
+
+    cargarCatalogos();
     obtenerClientes();
   }, []);
+
 
   // 🧾 Registrar auditoría
   const registrarAuditoria = async (accion) => {
@@ -161,70 +212,58 @@ const Clientes = () => {
     e.preventDefault();
     const token = localStorage.getItem("token");
     const decoded = JSON.parse(atob(token.split(".")[1]));
-    const userId = decoded.id || decoded.userId || decoded.data?.id;
+    const usuarioId = decoded.id || decoded.userId || decoded.data?.id;
 
     try {
-      let idUbicacion = form.idUbicacion;
-
-      // 🔹 Si está editando, actualiza la ubicación existente
-      if (editing && idUbicacion) {
-        await axios.put(
-          `${import.meta.env.VITE_BACKEND_URL}/cliente/ubicacion/${idUbicacion}`,
-          {
-            idDepartamento: form.idDepartamento,
-            idMunicipio: form.idMunicipio,
-            latitud: form.latitud,
-            longitud: form.longitud,
-            actualizadoPor: userId,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      }
-      // 🔹 Si es nuevo cliente, primero crea la ubicación
-      else {
-        const ubicacionRes = await axios.post(
-          `${import.meta.env.VITE_BACKEND_URL}/cliente/ubicacion`,
-          {
-            idDepartamento: form.idDepartamento,
-            idMunicipio: form.idMunicipio,
-            latitud: form.latitud,
-            longitud: form.longitud,
-            creadoPor: userId,
-            actualizadoPor: userId,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        idUbicacion = ubicacionRes.data.data.id;
-      }
-
-      // 🧠 Datos del cliente
-      const payload = {
+      const finalData = {
         nombre: form.nombre,
         apellido: form.apellido,
         nit: form.nit,
         correo: form.correo,
         telefono: form.telefono,
-        idUbicacion,
-        creadoPor: userId,
-        actualizadoPor: userId,
+        idDepartamento: form.idDepartamento,
+        idMunicipio: form.idMunicipio,
+        longitud: form.longitud,
+        latitud: form.latitud,
+        ubicacion: form.ubicacion,
+        creadoPor: usuarioId,
+        actualizadoPor: usuarioId,
       };
 
-      // 🧾 Crear o actualizar cliente
+      console.log("📤 Datos a enviar:", finalData);
+
+      let response;
+
+      // 🔹 SI ESTAMOS EDITANDO → USAR PUT
       if (editing) {
-        await axios.put(`${import.meta.env.VITE_BACKEND_URL}/cliente/${editing.id}`, payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        await registrarAuditoria(`Editó al cliente ${form.nombre} ${form.apellido}`);
-        showAlert("Cliente actualizado correctamente");
-      } else {
-        await axios.post(`${import.meta.env.VITE_BACKEND_URL}/cliente`, payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        await registrarAuditoria(`Agregó al cliente ${form.nombre} ${form.apellido}`);
-        showAlert("Cliente creado correctamente");
+        response = await axios.put(
+          `${import.meta.env.VITE_BACKEND_URL}/cliente/${editing.id}`,
+          finalData,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (response.data.success) {
+          showAlert("Cliente actualizado correctamente", "success");
+          await registrarAuditoria(`Actualizó al cliente ${form.nombre} ${form.apellido}`);
+          obtenerClientes();
+        }
+      }
+      // 🔹 SI ES NUEVO → POST
+      else {
+        response = await axios.post(
+          `${import.meta.env.VITE_BACKEND_URL}/cliente`,
+          finalData,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (response.data.success) {
+          await registrarAuditoria(`Registró al cliente ${form.nombre} ${form.apellido}`);
+          showAlert("Cliente creado correctamente", "success");
+          obtenerClientes();
+        }
       }
 
-      // Resetear formulario
+      // Limpiar formulario
       setForm({
         nombre: "",
         apellido: "",
@@ -233,18 +272,21 @@ const Clientes = () => {
         telefono: "",
         idDepartamento: "",
         idMunicipio: "",
+        ubicacion: "",
         latitud: "",
         longitud: "",
         idUbicacion: null,
       });
-      setMarker(null);
       setEditing(null);
-      obtenerClientes();
+      setMarker(null);
+
     } catch (error) {
-      console.error("Error al guardar cliente:", error);
+      console.error("Error guardar:", error);
       showAlert("Error al guardar cliente", "error");
     }
   };
+
+
 
   // ✏️ Editar cliente
   const handleEdit = (cliente) => {
@@ -257,6 +299,7 @@ const Clientes = () => {
       telefono: cliente.telefono,
       idDepartamento: cliente.ubicacion?.idDepartamento || "",
       idMunicipio: cliente.ubicacion?.idMunicipio || "",
+      ubicacion: cliente.ubicacion?.ubicacion || "",
       latitud: cliente.ubicacion?.latitud || "",
       longitud: cliente.ubicacion?.longitud || "",
     });
@@ -287,6 +330,68 @@ const Clientes = () => {
     }
   };
 
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+
+
+
+  const generarPDF = () => {
+    const doc = new jsPDF();
+
+    // 1️⃣ Título del PDF
+    doc.setFontSize(18);
+    doc.text("SkyNet S.A.", 14, 22);
+
+    // 2️⃣ Tabla con los datos de clientes
+    const tableColumn = ["#", "Nombre", "Apellido", "Correo", "Teléfono", "NIT", "Ubicación"];
+    const tableRows = [];
+
+    clientes.forEach((c, index) => {
+      const depId = Number(c.ubicacion?.idDepartamento);
+      const muniId = Number(c.ubicacion?.idMunicipio);
+
+      const dep = departamentos.find(d => Number(d.id) === depId);
+      const muniList = municipios[depId] || [];
+      const muni = muniList.find(m => Number(m.id) === muniId);
+
+      const rowData = [
+        index + 1,
+        c.nombre,
+        c.apellido,
+        c.correo,
+        c.telefono,
+        c.nit,
+        `${dep?.nombre || "Sin depto"}, ${muni?.nombre || "Sin muni"}, ${c.ubicacion?.ubicacion || ""}`
+      ];
+      tableRows.push(rowData);
+    });
+
+    // 3️⃣ Crear la tabla
+    autoTable(doc, {
+      startY: 30,
+      head: [tableColumn],
+      body: tableRows,
+      theme: "grid",
+      headStyles: { fillColor: [25, 118, 210], textColor: 255 },
+      styles: { fontSize: 10 },
+    });
+
+    // 4️⃣ Guardar PDF
+    doc.save("Clientes_SkyNet.pdf");
+  };
+
+
+
+
+
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h5" gutterBottom>
@@ -297,7 +402,7 @@ const Clientes = () => {
       <Paper sx={{ p: 3, mb: 3, borderRadius: 3, boxShadow: 3 }}>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={2}>
-            {["nombre", "apellido", "nit", "correo", "telefono", "idDepartamento", "idMunicipio"].map(
+            {["nombre", "apellido", "nit", "correo", "telefono", "ubicacion"].map(
               (field) => (
                 <Grid item xs={12} sm={6} key={field}>
                   <TextField
@@ -326,28 +431,25 @@ const Clientes = () => {
               <MapClickHandler />
             </MapContainer>
           </Box>
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="body1">
-              <strong>Departamento ID:</strong> {form.idDepartamento || "-"}
-            </Typography>
-            <Typography variant="body1">
-              <strong>Municipio ID:</strong> {form.idMunicipio || "-"}
-            </Typography>
-          </Box>
-
-
-
-          <Button type="submit" variant="contained" color="primary">
+          <Button type="submit" variant="contained" color="primary" disabled={!form.latitud || !form.longitud}>
             {editing ? "Actualizar Cliente" : "Guardar Cliente"}
+
           </Button>
         </form>
       </Paper>
 
       {/* 📋 TABLA */}
       <Paper sx={{ p: 2, borderRadius: 3, boxShadow: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Clientes Registrados
-        </Typography>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Clientes Registrados
+          </Typography>
+          <Button variant="outlined" color="secondary" onClick={generarPDF}>
+            Descargar PDF
+          </Button>
+        </Box>
+
+
 
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
@@ -358,38 +460,48 @@ const Clientes = () => {
               <th>Correo</th>
               <th>Teléfono</th>
               <th>NIT</th>
-              <th>Latitud</th>
-              <th>Longitud</th>
+              <th>Ubicacion</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {clientes.length > 0 ? (
-              clientes.map((c, i) => (
-                <tr key={c.id} style={{ textAlign: "center" }}>
-                  <td>{i + 1}</td>
-                  <td>{c.nombre}</td>
-                  <td>{c.apellido}</td>
-                  <td>{c.correo}</td>
-                  <td>{c.telefono}</td>
-                  <td>{c.nit}</td>
-                  <td>{c.ubicacion?.latitud || "-"}</td>
-                  <td>{c.ubicacion?.longitud || "-"}</td>
+              clientes
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((c, i) => (
+                  <tr key={c.id} style={{ textAlign: "center" }}>
+                    <td>{page * rowsPerPage + i + 1}</td>
+                    <td>{c.nombre}</td>
+                    <td>{c.apellido}</td>
+                    <td>{c.correo}</td>
+                    <td>{c.telefono}</td>
+                    <td>{c.nit}</td>
+                    <td>
+                      {(() => {
+                        const depId = Number(c.ubicacion?.idDepartamento);
+                        const muniId = Number(c.ubicacion?.idMunicipio);
 
-                  <td>
-                    <Tooltip title="Editar">
-                      <IconButton color="primary" onClick={() => handleEdit(c)}>
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Eliminar">
-                      <IconButton color="error" onClick={() => handleDelete(c)}>
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </td>
-                </tr>
-              ))
+                        const dep = departamentos.find(d => Number(d.id) === depId);
+                        const muniList = municipios[depId] || [];
+                        const muni = muniList.find(m => Number(m.id) === muniId);
+
+                        return `${dep?.nombre || "Sin depto"}, ${muni?.nombre || "Sin muni"}, ${c.ubicacion?.ubicacion || ""}`;
+                      })()}
+                    </td>
+                    <td>
+                      <Tooltip title="Editar">
+                        <IconButton color="primary" onClick={() => handleEdit(c)}>
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Eliminar">
+                        <IconButton color="error" onClick={() => handleDelete(c)}>
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </td>
+                  </tr>
+                ))
             ) : (
               <tr>
                 <td colSpan="9" style={{ textAlign: "center", padding: "12px" }}>
@@ -398,7 +510,18 @@ const Clientes = () => {
               </tr>
             )}
           </tbody>
+
         </table>
+        <TablePagination
+          component="div"
+          count={clientes.length}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          rowsPerPageOptions={[5, 10, 25, 50]}
+        />
+
       </Paper>
 
       {/* 🔔 ALERTA */}

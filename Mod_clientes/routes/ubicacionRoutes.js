@@ -32,10 +32,10 @@ router.get('/ubicacion/:id', async (req, res) => {
 });
 
 router.post('/ubicacion', async (req, res) => {
-    const { idDepartamento, idMunicipio, longitud, latitud, creadoPor, actualizadoPor } = req.body;
+    const { idDepartamento, idMunicipio, longitud, latitud, ubicacion, creadoPor, actualizadoPor } = req.body;
 
     try {
-        const newcargo = await User.create({ idDepartamento, idMunicipio, longitud, latitud, creadoPor, actualizadoPor });
+        const newcargo = await User.create({ idDepartamento, idMunicipio, longitud, latitud, ubicacion, creadoPor, actualizadoPor });
 
         res.status(201).json({ success: true, data: newcargo, message: 'Ubicacion creada correctamente.' });
     } catch (error) {
@@ -47,7 +47,7 @@ router.post('/ubicacion', async (req, res) => {
 
 router.put('/ubicacion/:id', async (req, res) => {
     const Id = req.params.id;
-    const { idDepartamento, idMunicipio, longitud, latitud, actualizadoPor } = req.body;
+    const { idDepartamento, idMunicipio, longitud, latitud, ubicacion, actualizadoPor } = req.body;
 
     try {
         const existing = await User.findByPk(Id);
@@ -56,7 +56,7 @@ router.put('/ubicacion/:id', async (req, res) => {
             return res.status(404).json({ success: false, error: 'Ubicacion no encontrado.' });
         }
 
-        await existing.update({ idDepartamento, idMunicipio, longitud, latitud, actualizadoPor });
+        await existing.update({ idDepartamento, idMunicipio, longitud, latitud, ubicacion, actualizadoPor });
 
         res.status(200).json({ success: true, data: existing, message: 'Ubicacion actualizado correctamente.' });
     } catch (error) {

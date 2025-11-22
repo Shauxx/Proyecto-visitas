@@ -20,8 +20,8 @@ app.use(cors({
 // Rutas
 app.use('/visita', estadoRoutes);
 app.use('/visita', registroVisitasRoutes);
-app.use('/visita', tipoServicioRoutes);
 app.use('/visita', visitasRoutes);
+app.use('/tipo', tipoServicioRoutes);
 
 // Sincronizar con la base de datos y arrancar el servidor
 sequelize.sync({ force: false }).then(() => {

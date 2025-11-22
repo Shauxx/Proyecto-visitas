@@ -4,6 +4,8 @@ import TableTemplate from "../componentes/TableTemplate";
 import FormModal from "../componentes/FormModal";
 import ConfirmDialog from "../componentes/ConfirmDialog";
 import { Button, Box, Snackbar, Alert } from "@mui/material";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const TipoServicio = () => {
     const [tiposServicio, setTiposServicio] = useState([]);
@@ -28,7 +30,7 @@ const TipoServicio = () => {
     // 🔹 Obtener tipos de servicio
     const fetchTiposServicio = async () => {
         try {
-            const url = `${import.meta.env.VITE_BACKEND_VISITA}/visita/tipoServicio`;
+            const url = `${import.meta.env.VITE_BACKEND_VISITA}/tipo/tipoServicio`;
             const res = await axios.get(url);
             setTiposServicio(res.data?.data || []);
         } catch (error) {
@@ -88,7 +90,7 @@ const TipoServicio = () => {
                 actualizadoPor: userIdFromToken,
             };
 
-            const url = `${import.meta.env.VITE_BACKEND_VISITA}/visita/tipoServicio`;
+            const url = `${import.meta.env.VITE_BACKEND_VISITA}/tipo/tipoServicio`;
             const res = await axios.post(url, dataToSend);
 
             await registrarAuditoria(`Creó el tipo de servicio "${formData.tipo}"`);
@@ -104,7 +106,7 @@ const TipoServicio = () => {
     const editTipoServicio = async (id, formData) => {
         try {
             const dataToSend = { ...formData, actualizadoPor: userIdFromToken };
-            const url = `${import.meta.env.VITE_BACKEND_VISITA}/visita/tipoServicio/${id}`;
+            const url = `${import.meta.env.VITE_BACKEND_VISITA}/tipo/tipoServicio/${id}`;
             const res = await axios.put(url, dataToSend);
 
             await registrarAuditoria(`Editó el tipo de servicio "${formData.tipo}"`);
@@ -119,7 +121,7 @@ const TipoServicio = () => {
     // 🔹 Eliminar tipo de servicio
     const deleteTipoServicio = async (id) => {
         try {
-            const url = `${import.meta.env.VITE_BACKEND_VISITA}/visita/tipoServicio/${id}`;
+            const url = `${import.meta.env.VITE_BACKEND_VISITA}/tipo/tipoServicio/${id}`;
             const res = await axios.delete(url);
 
             await registrarAuditoria(`Eliminó el tipo de servicio con ID ${id}`);
@@ -154,9 +156,61 @@ const TipoServicio = () => {
         { name: "tipo", label: "Tipo de Servicio" },
     ];
 
+    const generarPDF = () => {
+        const doc = new jsPDF();
+
+        // 🔹 Encabezado
+        doc.setFontSize(18);
+        doc.text("SkyNet S.A.", 14, 20);
+
+        // 🔹 Encabezado del reporte
+        doc.setFontSize(14);
+        doc.text("Reporte de Tipos de Servicio", 14, 30);
+
+        // 🔹 Columnas del PDF
+        const columnas = [
+            "Tipo de Servicio",
+            "Creado Por",
+            "Actualizado Por"
+        ];
+
+        // 🔹 Filas del PDF
+        const filas = mappedTiposServicio.map((t) => [
+            t.tipo,
+            t.creadoPorNombre,
+            t.actualizadoPorNombre
+        ]);
+
+        // 🔹 Generar la tabla
+        autoTable(doc, {
+            startY: 38,
+            head: [columnas],
+            body: filas,
+            theme: "grid",
+            headStyles: {
+                fillColor: [25, 118, 210],
+                textColor: 255,
+            },
+            styles: {
+                fontSize: 10,
+            }
+        });
+
+        // 🔹 Descargar PDF
+        doc.save("Tipos_Servicio_SkyNet.pdf");
+    };
+
+
     return (
         <div style={{ padding: 20 }}>
-            <h2>Gestión de Tipos de Servicio</h2>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                <h2>Gestión de Tipos de Servicio</h2>
+
+                <Button variant="outlined" color="secondary" onClick={generarPDF}>
+                    Descargar PDF
+                </Button>
+            </Box>
+
 
             <Box sx={{ mb: 2, display: "flex", justifyContent: "flex-end" }}>
                 <Button

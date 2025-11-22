@@ -32,7 +32,7 @@ router.get('/empleado/:id', async (req, res) => {
 });
 
 router.post('/empleado', async (req, res) => {
-    const { nombre, apellido, nit, dpi, idDepartamento, idMunicipio, creadoPor, actualizadoPor } = req.body;
+    const { nombre, apellido, nit, dpi, correo, idDepartamento, idMunicipio, creadoPor, actualizadoPor } = req.body;
 
     try {
         const existing = await User.findOne({ where: { nit, dpi } });
@@ -41,7 +41,7 @@ router.post('/empleado', async (req, res) => {
             return res.status(400).json({ success: false, error: 'El empleado ya existe.' });
         }
 
-        const newcargo = await User.create({ nombre, apellido, nit, dpi, idDepartamento, idMunicipio, creadoPor, actualizadoPor });
+        const newcargo = await User.create({ nombre, apellido, nit, dpi, correo, idDepartamento, idMunicipio, creadoPor, actualizadoPor });
 
         res.status(201).json({ success: true, data: newcargo, message: 'Empleado creado correctamente.' });
     } catch (error) {
@@ -53,7 +53,7 @@ router.post('/empleado', async (req, res) => {
 
 router.put('/empleado/:id', async (req, res) => {
     const Id = req.params.id;
-    const { nombre, apellido, nit, dpi, idDepartamento, idMunicipio, actualizadoPor } = req.body;
+    const { nombre, apellido, nit, dpi, correo, idDepartamento, idMunicipio, actualizadoPor } = req.body;
 
     try {
         const existing = await User.findByPk(Id);
@@ -62,7 +62,7 @@ router.put('/empleado/:id', async (req, res) => {
             return res.status(404).json({ success: false, error: 'Empleado no encontrado.' });
         }
 
-        await existing.update({ nombre, apellido, nit, dpi, idDepartamento, idMunicipio, actualizadoPor });
+        await existing.update({ nombre, apellido, nit, dpi, correo, idDepartamento, idMunicipio, actualizadoPor });
 
         res.status(200).json({ success: true, data: existing, message: 'Empleado actualizado correctamente.' });
     } catch (error) {
