@@ -1,14 +1,11 @@
 import express from "express";
 import axios from "axios";
+import { VISITA_URL } from '../config/db.config.js';
+import { CLIENTE_URL } from '../config/db.config.js';
+import { EMPLEADO_URL } from '../config/db.config.js';
+import { CONFIG_URL } from '../config/db.config.js';
 
 const router = express.Router();
-
-// 🔗 URLs de los microservicios
-const VISITA_URL = process.env.VISITA || "http://localhost:4000";
-const CLIENTE_URL = process.env.CLIENTE || "http://localhost:3000";
-const EMPLEADO_URL = process.env.EMPLEADO || "http://localhost:5000";
-const CONFIG_URL = process.env.CONFIG || "http://localhost:2000";
-
 
 // ------------------------
 // 📌 FUNCIONES COMPARTIDAS

@@ -28,6 +28,7 @@ import DashboardTecnico from "../page/DashboardTecnico";
 import DashboardSupervisor from "../page/DashboardSupervisor";
 import DashboardAdmin from "../page/DashboardAdmin";
 import Perfil from '../page/Perfil'
+import Supervisartecnico from '../page/SupervisarTecnico'
 
 const URL = import.meta.env.VITE_BACKEND_USUARIO;
 const drawerWidth = 240;
@@ -73,7 +74,7 @@ export default function Slide() {
         if (rol === 1) {
             setMenuItems(["Inicio", "Clientes", "Usuarios", "Visita", "Empleados", "Auditoria", "Rol", "Tipo Servicio", "Estado", "Plantilla"]);
         } else if (rol === 2) {
-            setMenuItems(["Inicio", "Visita"]);
+            setMenuItems(["Inicio", "Visita", "Tecnicos"]);
         } else if (rol === 3) {
             setMenuItems(["Inicio", "Mis Visitas", "Historico"]);
         }
@@ -153,7 +154,7 @@ export default function Slide() {
         'Usuarios': <Person />,
         'Plantilla': <AttachMoney />,
         'Rol Permiso': <Book />,
-        'Asignar notas': <Money />,
+        'Tecnicos': <Money />,
         'Reportes': <Assessment />,
         'Visita': <Book />,
         'Historico': <BookmarkAdd />,
@@ -327,6 +328,7 @@ export default function Slide() {
 
                 {perfil.idRol === 2 && selectedMenuItem === 'Visita' && (<Visita />)}
                 {perfil.idRol === 2 && selectedMenuItem === 'Inicio' && (<DashboardSupervisor />)}
+                {perfil.idRol === 2 && selectedMenuItem === 'Tecnicos' && (<Supervisartecnico />)}
 
                 {perfil.idRol === 3 && selectedMenuItem === 'Inicio' && (<DashboardTecnico />)}
                 {perfil.idRol === 3 && selectedMenuItem === 'Mis Visitas' && (<Registro />)}
