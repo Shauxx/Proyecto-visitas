@@ -4,11 +4,10 @@ import axios from 'axios';
 import User from '../db/models/visitas.js';
 import Estado from "../db/models/estado.js";
 import TipoServicio from "../db/models/tipoServicio.js";
+import { CLIENTE_URL } from '../config/db.config.js';
+import { EMPLEADO_URL } from '../config/db.config.js';
 
 const router = express.Router();
-const CLIENTE_URL = process.env.CLIENTE || "http://localhost:3000";
-const EMPLEADO_URL = process.env.EMPLEADO || "http://localhost:5000";
-
 
 async function getEmpleado(id) {
     try {
