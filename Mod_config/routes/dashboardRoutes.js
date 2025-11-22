@@ -60,18 +60,31 @@ async function getClientes() {               // <---- AGREGA ESTA
 
 router.get("/admin", async (req, res) => {
     try {
-
-        // 🔹 Obtener datos de microservicios
-        const [visitas, clientes, empleados] = await Promise.all([
+        // Hacemos las llamadas PERO sin tirar error si falla alguna
+        const [visitasRes, clientesRes, empleadosRes] = await Promise.allSettled([
             getVisitas(),
             getClientes(),
             getEmpleados(),
         ]);
 
-        // -------------------------------------------------------------------
-        // 🟦 1) KPIs Generales
-        // -------------------------------------------------------------------
+        // Logs para detectar qué microservicio falla en Render
+        if (visitasRes.status === "rejected")
+            console.log("❌ VISITAS falló:", visitasRes.reason);
 
+        if (clientesRes.status === "rejected")
+            console.log("❌ CLIENTES falló:", clientesRes.reason);
+
+        if (empleadosRes.status === "rejected")
+            console.log("❌ EMPLEADOS falló:", empleadosRes.reason);
+
+        // Aseguramos que si uno falla, sigue funcionando
+        const visitas = visitasRes.status === "fulfilled" ? visitasRes.value : [];
+        const clientes = clientesRes.status === "fulfilled" ? clientesRes.value : [];
+        const empleados = empleadosRes.status === "fulfilled" ? empleadosRes.value : [];
+
+        // -------------------------------------
+        //   KPIs
+        // -------------------------------------
         const totalVisitas = visitas.length;
 
         const visitasPorEstado = {
@@ -84,9 +97,7 @@ router.get("/admin", async (req, res) => {
         const totalClientes = clientes.length;
         const totalEmpleados = empleados.length;
 
-        // -------------------------------------------------------------------
-        // 🟩 2) Visitas por técnico
-        // -------------------------------------------------------------------
+        // Visitas por técnico
         const visitasPorTecnico = {};
         visitas.forEach(v => {
             const tecnico = empleados.find(e => e.id === v.idTecnico);
@@ -94,20 +105,15 @@ router.get("/admin", async (req, res) => {
             visitasPorTecnico[nombre] = (visitasPorTecnico[nombre] || 0) + 1;
         });
 
-        // -------------------------------------------------------------------
-        // 🟨 3) Servicios más solicitados
-        // -------------------------------------------------------------------
+        // Servicios solicitados
         const servicios = {};
         visitas.forEach(v => {
             const nombreServicio = v.tipoServicio?.tipo || `Servicio ${v.idTipoServicio}`;
             servicios[nombreServicio] = (servicios[nombreServicio] || 0) + 1;
         });
 
-        // -------------------------------------------------------------------
-        // 🟪 4) Departamentos más visitados
-        // -------------------------------------------------------------------
+        // Departamentos más visitados
         const departamentosConteo = {};
-
         clientes.forEach(c => {
             const idDepto = c.ubicacion?.idDepartamento;
             if (idDepto) {
@@ -116,14 +122,9 @@ router.get("/admin", async (req, res) => {
             }
         });
 
-        // Ordena las visitas por fecha descendente y toma las últimas 10 (por ejemplo)
         const ultimasVisitas = visitas
             .sort((a, b) => new Date(b.fechaProgramada) - new Date(a.fechaProgramada))
             .slice(0, 10);
-
-        // -------------------------------------------------------------------
-        // 🟧 RESPUESTA FINAL
-        // -------------------------------------------------------------------
 
         res.json({
             success: true,
@@ -136,7 +137,7 @@ router.get("/admin", async (req, res) => {
                 servicios,
                 departamentosConteo,
                 ultimasVisitas
-            },
+            }
         });
 
     } catch (error) {
@@ -144,6 +145,7 @@ router.get("/admin", async (req, res) => {
         res.status(500).json({ success: false, error: "Error en dashboard admin" });
     }
 });
+
 
 
 
